@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Ukraine Rail Attacks — Intelligence Map (Document Version)</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #0D1B2A; color: #fff; }
+
+  #wrapper {
+    width: 900px;
+    margin: 0 auto;
+    border: 2px solid #C8102E;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  /* Header */
+  #header {
+    background: linear-gradient(90deg, #0D1B2A 0%, #1B3A5C 100%);
+    border-bottom: 2px solid #C8102E;
+    padding: 10px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  #header .title-block h1 { font-size: 13px; font-weight: 700; color: #fff; letter-spacing: 0.5px; }
+  #header .title-block p  { font-size: 9px; color: #6E8FA8; margin-top: 2px; }
+  #header .classif { background: #C8102E; color: #fff; font-size: 8px; font-weight: 700; padding: 3px 8px; border-radius: 3px; letter-spacing: 1px; }
+  #header .meta { font-size: 8px; color: #6E8FA8; text-align: right; line-height: 1.5; }
+
+  /* Map */
+  #map { width: 900px; height: 520px; }
+
+  /* Legend */
+  #legend {
+    background: #142233;
+    border-top: 1px solid #1B3A5C;
+    padding: 8px 16px;
+    display: flex; align-items: center; gap: 18px;
+  }
+  .legend-label { font-size: 9px; color: #6E8FA8; font-weight: 700; letter-spacing: 0.5px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 9px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* Summary bar */
+  #summary-bar {
+    background: #0a1520;
+    border-top: 1px solid #1B3A5C;
+    padding: 6px 16px;
+    font-size: 9px; color: #6E8FA8;
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  }
+  #summary-bar .sv { color: #fff; font-weight: 700; }
+  #summary-bar .divider { color: #1B3A5C; }
+
+  /* Leaflet popup override */
+  .leaflet-popup-content-wrapper {
+    border-radius: 4px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5) !important;
+  }
+  .leaflet-popup-content { margin: 0 !important; }
+  .leaflet-popup-tip { background: #1B3A5C !important; }
+
+  /* Print styles */
+  @media print {
+    body { background: white; }
+    #wrapper { border-color: #333; }
+  }
+</style>
+</head>
+<body>
+
+<div id="wrapper">
+
+  <div id="header">
+    <div class="title-block">
+      <h1>UKRAINE RAIL ATTACKS — INTELLIGENCE MAP</h1>
+      <p>Crisis24 Intelligence Services &nbsp;|&nbsp; 23 Recorded Incidents &nbsp;|&nbsp; April 2022 – March 2026 &nbsp;|&nbsp; Hover over markers for incident detail</p>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="meta">
+        Generated: <strong id="gen-date"></strong><br/>
+        Conflict Status: <strong style="color:#C8102E;">ACTIVE</strong>
+      </div>
+      <div class="classif">SENSITIVE — RESTRICTED</div>
+    </div>
+  </div>
+
+  <div id="map"></div>
+
+  <div id="legend">
+    <span class="legend-label">CASUALTY CATEGORY:</span>
+    <div class="legend-item"><div class="legend-dot" style="background:#C8102E;"></div> <span style="color:#FF9AA2;">KILLED</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#E87722;"></div> <span style="color:#FFD6A0;">INJURED ONLY</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#2ECC40;"></div> <span style="color:#A8E6A3;">NO CASUALTIES</span></div>
+    <div style="margin-left:auto;font-size:8px;color:#6E8FA8;">Larger markers indicate higher casualties &nbsp;|&nbsp; Click or hover for incident details</div>
+  </div>
+
+  <div id="summary-bar">
+    <span>TOTAL: <span class="sv">23 incidents</span></span>
+    <span class="divider">|</span>
+    <span style="color:#FF9AA2;">KILLED: <span class="sv">96</span></span>
+    <span class="divider">|</span>
+    <span style="color:#FFD6A0;">INJURED: <span class="sv">258</span></span>
+    <span class="divider">|</span>
+    <span>DEADLIEST: <span style="color:#FF6B7A;">Kramatorsk Station — 57 killed, 08 Apr 2022</span></span>
+    <span class="divider">|</span>
+    <span>PERIOD: <span class="sv">Apr 2022 – Mar 2026</span></span>
+  </div>
+
+</div>
+
+<script>
+document.getElementById('gen-date').textContent = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+
+const INCIDENTS = [
+  { id:1,  date:"08 Apr 2022", location:"Kramatorsk Station",                          oblast:"Donetsk Oblast",           lat:48.7199, lng:37.5697, killed:57, injured:87,  cat:"killed", railEffect:"Station full of evacuees hit directly" },
+  { id:2,  date:"25 Apr 2022", location:"Five Rail Stations, C&W Ukraine",             oblast:"Multiple",                 lat:49.8000, lng:30.5000, killed:1,  injured:4,   cat:"killed", railEffect:"Five stations hit; c.30 passenger trains delayed" },
+  { id:3,  date:"25 Apr 2022", location:"Zdolbuniv District",                          oblast:"Rivne Oblast",             lat:50.5168, lng:26.2513, killed:0,  injured:1,   cat:"injured",railEffect:"Rail infrastructure damaged; nearby houses also hit" },
+  { id:4,  date:"25 Apr 2022", location:"Krasne",                                      oblast:"Lviv Oblast",              lat:49.9000, lng:24.1000, killed:0,  injured:0,   cat:"none",   railEffect:"Power and supply disruption to rail operations" },
+  { id:5,  date:"28 Apr 2022", location:"Fastiv",                                      oblast:"Kyiv Oblast",              lat:50.0839, lng:29.9206, killed:0,  injured:2,   cat:"injured",railEffect:"Rail power infrastructure damaged" },
+  { id:6,  date:"24 Aug 2022", location:"Chaplyne Station",                            oblast:"Dnipropetrovsk Oblast",    lat:48.5000, lng:36.4000, killed:25, injured:0,   cat:"killed", railEffect:"Station area struck on Ukrainian Independence Day" },
+  { id:7,  date:"03 May 2023", location:"Kherson Railway Station",                     oblast:"Kherson Oblast",           lat:46.6354, lng:32.6169, killed:0,  injured:0,   cat:"none",   railEffect:"Station damaged; trains delayed but ran" },
+  { id:8,  date:"26 Dec 2023", location:"Kherson Railway Station",                     oblast:"Kherson Oblast",           lat:46.7054, lng:32.6469, killed:1,  injured:4,   cat:"killed", railEffect:"Station hit while evacuation train was preparing to depart" },
+  { id:9,  date:"25 Feb 2024", location:"Kostiantynivka Station",                      oblast:"Donetsk Oblast",           lat:48.5285, lng:37.7021, killed:0,  injured:0,   cat:"none",   railEffect:"Station reportedly all but destroyed" },
+  { id:10, date:"19 Apr 2024", location:"Dnipro Rail Infrastructure",                  oblast:"Dnipropetrovsk Oblast",    lat:48.4647, lng:35.0462, killed:0,  injured:0,   cat:"none",   railEffect:"Rail infrastructure damaged; services disrupted" },
+  { id:11, date:"25 Apr 2024", location:"Balakliia Station",                           oblast:"Kharkiv Oblast",           lat:49.4603, lng:36.8427, killed:0,  injured:13,  cat:"injured",railEffect:"Passengers in carriages injured by nearby impact" },
+  { id:12, date:"25 Apr 2024", location:"Smila",                                       oblast:"Cherkasy Oblast",          lat:49.2275, lng:31.8658, killed:0,  injured:6,   cat:"injured",railEffect:"Rail infrastructure damaged" },
+  { id:13, date:"25 Apr 2024", location:"Donetsk Oblast Rail Infrastructure",          oblast:"Donetsk Oblast",           lat:48.0000, lng:37.8000, killed:3,  injured:4,   cat:"killed", railEffect:"Staff casualties on operational rail network" },
+  { id:14, date:"27 Mar 2025", location:"Kherson Rail Infrastructure",                 oblast:"Kherson Oblast",           lat:46.5654, lng:32.5869, killed:0,  injured:0,   cat:"none",   railEffect:"Station area, rail infrastructure and carriage damaged" },
+  { id:15, date:"01 May 2025", location:"Odesa",                                       oblast:"Odesa Oblast",             lat:46.4825, lng:30.7233, killed:1,  injured:15,  cat:"killed", railEffect:"Tracks, contact network and 3 freight cars damaged" },
+  { id:16, date:"24 Jun 2025", location:"Dnipro",                                      oblast:"Dnipropetrovsk Oblast",    lat:48.5047, lng:35.0662, killed:0,  injured:0,   cat:"none",   railEffect:"Passenger carriage windows blown in" },
+  { id:17, date:"05 Aug 2025", location:"Lozova Rail Hub",                             oblast:"Kharkiv Oblast",           lat:48.8882, lng:36.3204, killed:2,  injured:13,  cat:"killed", railEffect:"Station and rail depot damaged" },
+  { id:18, date:"06 Dec 2025", location:"Fastiv Rail Hub",                             oblast:"Kyiv Oblast",              lat:50.0839, lng:29.9206, killed:0,  injured:0,   cat:"none",   railEffect:"Depot and carriages damaged; suburban services cancelled" },
+  { id:19, date:"27 Jan 2026", location:"Kharkiv Region (Chop–Barvinkove)",            oblast:"Kharkiv Oblast",           lat:49.9000, lng:36.5000, killed:5,  injured:0,   cat:"killed", railEffect:"At least 2 carriages caught fire" },
+  { id:20, date:"02 Mar 2026", location:"Dnipropetrovsk Commuter Line",                oblast:"Dnipropetrovsk Oblast",    lat:48.5000, lng:35.1000, killed:1,  injured:7,   cat:"killed", railEffect:"Passenger train struck" },
+  { id:21, date:"04 Mar 2026", location:"Mykolaiv and Odesa Regions",                  oblast:"Multiple",                 lat:47.0000, lng:31.9000, killed:0,  injured:5,   cat:"injured",railEffect:"Empty train hit; attempted strike on active train narrowly missed" },
+  { id:22, date:"24 Mar 2026", location:"Slatyne Station / Commuter to Kharkiv",       oblast:"Kharkiv Oblast",           lat:49.9167, lng:36.2500, killed:1,  injured:0,   cat:"killed", railEffect:"Direct hit on commuter rail near border-threat area" },
+  { id:23, date:"26 Mar 2026", location:"Kirovohrad Oblast Locomotive Facility",       oblast:"Kirovohrad Oblast",        lat:48.5000, lng:32.2000, killed:0,  injured:0,   cat:"none",   railEffect:"Several locomotives damaged" },
+];
+
+const CAT_COLORS = {
+  killed:  { fill:"#C8102E", stroke:"#7B0F1E", label:"KILLED" },
+  injured: { fill:"#E87722", stroke:"#8a4410", label:"INJURED ONLY" },
+  none:    { fill:"#2ECC40", stroke:"#1a7a26", label:"NO CASUALTIES" },
+};
+
+const map = L.map('map', {
+  center: [48.8, 32.0],
+  zoom: 6,
+  zoomControl: true,
+  scrollWheelZoom: true,
+});
+
+// Dark base tiles
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+  attribution: '© OpenStreetMap contributors © CARTO',
+  maxZoom: 19
+}).addTo(map);
+
+// Labels rendered above Ukraine overlay
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
+  attribution: '', maxZoom: 19, pane: 'shadowPane'
+}).addTo(map);
+
+// ── Ukraine GeoJSON border + subtle fill ──────────────────────────────────────
+fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson')
+  .then(r => r.json())
+  .then(data => {
+    const ukraine = { type:'FeatureCollection', features: data.features.filter(f => f.properties.ISO_A3 === 'UKR') };
+    L.geoJSON(ukraine, {
+      style: {
+        fillColor:   '#1a6fbd',
+        fillOpacity: 0.22,
+        color:       '#FFD700',
+        weight:      3.5,
+        opacity:     1.0,
+      }
+    }).addTo(map);
+  })
+  .catch(() => {
+    const uaBorder = [
+      [52.37,22.66],[52.11,23.20],[51.26,23.63],[50.74,24.02],[50.42,24.09],
+      [50.01,23.63],[49.58,22.76],[49.11,22.56],[48.55,22.14],[48.41,22.87],
+      [47.73,22.37],[47.10,22.46],[46.62,22.02],[46.19,22.17],[45.47,22.56],
+      [44.97,23.43],[44.53,24.10],[44.36,25.00],[44.54,26.17],[44.56,27.10],
+      [45.15,28.21],[45.31,28.87],[45.49,29.59],[46.38,30.18],[46.59,30.74],
+      [46.10,31.38],[46.00,32.48],[46.18,33.49],[46.51,34.55],[45.95,35.42],
+      [46.11,35.99],[46.33,36.46],[47.06,37.40],[47.44,38.24],[47.61,38.79],
+      [47.85,39.74],[48.22,39.88],[48.13,40.58],[48.38,40.98],[48.58,40.04],
+      [49.01,40.16],[49.55,40.03],[49.96,39.14],[50.33,38.61],[50.77,38.44],
+      [51.27,38.57],[51.60,39.12],[51.48,40.06],[51.77,40.55],[52.34,40.23],
+      [52.73,39.50],[52.85,38.65],[53.15,38.26],[53.40,37.42],[53.46,36.68],
+      [53.01,35.92],[52.53,35.10],[52.20,34.40],[51.80,33.74],[51.42,32.59],
+      [51.27,31.70],[51.52,31.14],[51.79,30.65],[52.11,30.13],[52.37,29.60],
+      [52.73,29.09],[53.02,28.70],[53.24,27.80],[53.61,26.95],[53.93,26.28],
+      [53.63,25.60],[53.08,24.71],[52.72,23.59],[52.37,22.66]
+    ];
+    L.polygon(uaBorder, {
+      fillColor:'#1a6fbd', fillOpacity:0.22,
+      color:'#FFD700', weight:3.5, opacity:1.0
+    }).addTo(map);
+  });
+
+INCIDENTS.forEach(inc => {
+  const c = CAT_COLORS[inc.cat];
+  // Scale marker by casualties
+  const casualties = inc.killed + inc.injured;
+  const sz = casualties >= 50 ? 22 : casualties >= 20 ? 18 : casualties >= 5 ? 16 : 13;
+
+  const icon = L.divIcon({
+    html: `<div style="
+      width:${sz}px; height:${sz}px; border-radius:50%;
+      background:${c.fill}; border:2px solid ${c.stroke};
+      box-shadow:0 1px 5px rgba(0,0,0,0.7);
+    "></div>`,
+    iconSize:   [sz, sz],
+    iconAnchor: [sz/2, sz/2],
+    className:  ''
+  });
+
+  const casualtyHtml = inc.killed > 0 ? `<div style="color:#C8102E;font-weight:700;font-size:11px;">Killed: ${inc.killed}</div>` : '';
+  const injuredHtml  = inc.injured > 0 ? `<div style="color:#E87722;font-weight:700;font-size:11px;">Injured: ${inc.injured}</div>` : '';
+  const noneHtml     = (!inc.killed && !inc.injured) ? `<div style="color:#2ECC40;font-size:11px;">No casualties reported</div>` : '';
+  const headerBg     = inc.cat === 'killed' ? '#7B0F1E' : inc.cat === 'injured' ? '#6B3200' : '#143a14';
+
+  const popupContent = `
+    <div style="font-family:'Segoe UI',Arial,sans-serif;min-width:250px;max-width:300px;">
+      <div style="background:${headerBg};color:#fff;padding:9px 11px;border-radius:3px 3px 0 0;">
+        <div style="color:${c.fill};font-size:8px;font-weight:700;letter-spacing:1px;margin-bottom:2px;">${c.label}</div>
+        <div style="font-size:12px;font-weight:700;line-height:1.3;">${inc.location}</div>
+        <div style="font-size:9px;color:#A8C4D8;margin-top:2px;">${inc.date} &nbsp;|&nbsp; ${inc.oblast}</div>
+      </div>
+      <div style="background:#f8fafc;padding:9px 11px;border-radius:0 0 3px 3px;border:1px solid #dee6ef;border-top:none;">
+        ${casualtyHtml}${injuredHtml}${noneHtml}
+        <div style="margin-top:6px;padding-top:6px;border-top:1px solid #dee6ef;">
+          <div style="font-size:8px;font-weight:700;color:#6E8FA8;margin-bottom:2px;">RAIL EFFECT</div>
+          <div style="font-size:10px;color:#223344;line-height:1.4;">${inc.railEffect}</div>
+        </div>
+        <div style="margin-top:4px;font-size:8px;color:#99aaaa;">${inc.lat.toFixed(4)}°N, ${inc.lng.toFixed(4)}°E</div>
+      </div>
+    </div>`;
+
+  const marker = L.marker([inc.lat, inc.lng], {icon});
+  marker.bindPopup(popupContent, { maxWidth: 320 });
+
+  // Open popup on hover too
+  marker.on('mouseover', function() { this.openPopup(); });
+
+  marker.addTo(map);
+});
+</script>
+</body>
+</html>
